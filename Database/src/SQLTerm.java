@@ -1,7 +1,7 @@
 
 public class SQLTerm {
-	String _strTableName;
-	String _strColumnName;
-	String _strOperator;
-	Object _objValue;
+	private String _strTableName;
+	private String _strColumnName;
+	private String _strOperator;
+	private Object _objValue;
 }
