@@ -1,17 +1,39 @@
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.Vector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class DBApp {
 	
+	private Vector<Table> tableVector =  new Vector<>();
+	
 	public void init() {
+		
+	      try {
+	         FileInputStream fileIn = new FileInputStream("./data/tables.class");
+	         ObjectInputStream in = new ObjectInputStream(fileIn);
+	         tableVector = (Vector<Table>) in.readObject();
+	         in.close();
+	         fileIn.close();
+	      } catch (IOException i) {
+	         i.printStackTrace();
+	         return;
+	      } catch (ClassNotFoundException c) {
+	         System.out.println("Vector class not found");
+	         c.printStackTrace();
+	         return;
+	      }
+	     
+	      
 		
 	}
 	
@@ -19,11 +41,12 @@ public class DBApp {
 			String strClusteringKeyColumn,
 			Hashtable<String, String> htblColNameType)throws DBAppException, IOException{
 		Table newTable = new Table(strTableName);
+		tableVector.add(newTable);
 		try {
 	         FileOutputStream fileOut =
-	         new FileOutputStream("./data/tables.class",true);
+	         new FileOutputStream("./data/tables.class");
 	         ObjectOutputStream out = new ObjectOutputStream(fileOut);
-	         out.writeObject(newTable);
+	         out.writeObject(tableVector);
 	         out.close();
 	         fileOut.close();
 	         System.out.printf("success");
