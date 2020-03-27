@@ -3,8 +3,8 @@ import java.util.Hashtable;
 public class Tuple {
 
 	private String attribute;
-	private String value;
-	public Tuple(String attribute, String value) {
+	private Object value;
+	public Tuple(String attribute, Object value) {
 		this.attribute=attribute;
 		this.value=value;
 		// TODO Auto-generated constructor stub

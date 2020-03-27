@@ -1,5 +1,7 @@
+import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -18,7 +20,7 @@ import java.util.stream.Stream;
 public class DBApp {
 	
 	private Vector<Table> tableVector =  new Vector<>(); //contains all table objects
-	
+	public static int currentpages = 0;
 	
 	//At the start of the program run this method to read all the tables from the disk and assign the vector to table vector
 	public void init() {
@@ -102,7 +104,7 @@ public class DBApp {
 	//uncompleted
 	public void insertIntoTable(String strTableName,
 			 Hashtable<String,Object> htblColNameValue)
-			 throws DBAppException{
+			 throws DBAppException, IOException{
 		Table tempTable = null;
 		for(Table table : tableVector)
 		{
@@ -112,12 +114,28 @@ public class DBApp {
 		if(tempTable==null)
 			System.out.println("Table not found");
 		else {
-			if(tempTable.maxPageNumber==0)
+			if(tempTable.pages.size()==0)
 			{
 				//first insertion in table
 				Vector<Tuple> page = new Vector<>();
 				Set<String> keys = htblColNameValue.keySet();
+				Tuple t = null;
+				String data;
+				Object value;
 				for(String key:keys) {
+					data = key;
+					String type ="class " + checkDataType(strTableName, key);
+					value=htblColNameValue.get(key);
+					String valueType = value.getClass()+"";
+					if(type.equals(valueType))
+					{
+						//Data type in metafile = datatype inserted by user
+						tempTable.pages.add(page);
+						t = new Tuple(data, value);
+						currentpages++;
+						page.add(t);
+						
+					}
 					
 					
 					
@@ -149,6 +167,31 @@ public class DBApp {
 	
 	
 	
+	//returns the data type of an attribute in a table
+	public static String checkDataType(String tableName, String attribute) throws IOException
+	{
+		BufferedReader br = new BufferedReader(new FileReader("./data/metadata.csv"));
+		String line = br.readLine();
+		while(line!=null)
+		{
+			String [] data = line.split(",");
+			String name= data[0];
+			String attr = data[1];
+			String type = data[2];
+			if(name.equals(tableName))
+			{
+				if(attr.equals(attribute));
+					return type;
+			}
+			
+			
+			
+			line=br.readLine();
+		}
+		br.close();
+		return "#"; //attribute not found
+	}
+	
 	//this method receives type of an object and the value as strings and returns this object
 	// eg. received "java.lang.Integer" and "100" return int 100
 	public static Object stringToObject(String type, String value)
@@ -178,10 +221,9 @@ public class DBApp {
 		return object;
 	
 	}
-	public static void main(String[] args) throws DBAppException, IOException {
-		String strColType = "java.lang.Integer";
-		String strColValue = "100";
-		System.out.println(stringToObject(strColType, strColValue).getClass());
+	public static void main(String[] args) throws DBAppException, IOException, ClassNotFoundException {
+		Class c = Class.forName("java.lang.Integer");
+		System.out.println(c.getClass()+"");
 	}
 	
 	
