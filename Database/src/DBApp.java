@@ -120,34 +120,72 @@ public class DBApp {
 		if(tempTable==null)
 			System.out.println("Table not found");
 		else {
-			if(tempTable.pages.size()==0)
-			{
-				//first insertion in table
-				Vector<Tuple> page = new Vector<>();
-				Set<String> keys = htblColNameValue.keySet();
-				Tuple t = null;
-				String data;
-				Object value;
-				for(String key:keys) {
-					data = key;
-					String type ="class " + checkDataType(strTableName, key);
-					value=htblColNameValue.get(key);
-					String valueType = value.getClass()+"";
-					if(type.equals(valueType))
-					{
-						//Data type in metafile = datatype inserted by user
-						tempTable.pages.add(page);
-						t = new Tuple(data, value);
-						currentpages++;
-						page.add(t);
-						
-					}
-					
-					
+
+			
+			Vector<Tuple> page = new Vector<>();
+			Set<String> keys = htblColNameValue.keySet();
+			Tuple t = null;
+			String data;
+			Object value;
+			boolean correctTuple = true;
+			for(String key:keys) {
+				data = key;
+				String type ="class " + checkDataType(strTableName, key);
+				value=htblColNameValue.get(key);
+				String valueType = value.getClass()+"";
+				if(!(type.equals(valueType)))
+				{
+					correctTuple=false;
 					
 				}
 				
 				
+				
+			}
+			if(correctTuple) {
+			if(tempTable.maxPageNumber==0)
+			{
+				//first insertion in table
+				
+					tempTable.maxPageNumber++;
+					t = new Tuple(htblColNameValue);
+					page.add(t);
+					storePage(tempTable, page);
+					tempTable.pageFiles.add("./data/"+tempTable.name+tempTable.maxPageNumber+".class");
+				
+				
+				
+			}
+			else {
+				
+					boolean added=false;
+					for(String path: tempTable.pageFiles)
+					{
+						Vector<Tuple> loadedPage = readPage(path);
+						if(loadedPage.size()!=maxPageSize)
+						{
+							t = new Tuple(htblColNameValue);
+							loadedPage.add(t);
+							storePage(tempTable, loadedPage);
+							added=true;
+							break;
+							
+						}
+					}
+					if(!added)
+					{
+						tempTable.maxPageNumber++;
+						t = new Tuple(htblColNameValue);
+						page.add(t);
+						storePage(tempTable, page);
+						tempTable.pageFiles.add("./data/"+tempTable.name+tempTable.maxPageNumber+".class");
+					} 
+				}
+				
+				
+			}
+			else {
+				throw new DBAppException("dsds");
 			}
 		}
 		
@@ -264,6 +302,42 @@ public class DBApp {
         } catch (IOException io) {
             io.printStackTrace();
         }
+	}
+	
+	public static Vector<Tuple> readPage(String path)
+	{
+		Vector<Tuple> page = null;
+	      try {
+	         FileInputStream fileIn = new FileInputStream(path);
+	         ObjectInputStream in = new ObjectInputStream(fileIn);
+	         page = (Vector<Tuple>) in.readObject();
+	         in.close();
+	         fileIn.close();
+	      } catch (IOException i) {
+	         i.printStackTrace();
+	       //  break;
+	      } catch (ClassNotFoundException c) {
+	        // System.out.println("Employee class not found");
+	         c.printStackTrace();
+	       //  break;
+	      }
+	      return page;
+	}
+	
+	
+	public static void storePage(Table table, Vector<Tuple> page)
+	{
+		try {
+	         FileOutputStream fileOut =
+	         new FileOutputStream("./data/"+table.name+table.maxPageNumber+".class");
+	         ObjectOutputStream out = new ObjectOutputStream(fileOut);
+	         out.writeObject(page);
+	         out.close();
+	         fileOut.close();
+	        // System.out.printf("success");
+	      } catch (IOException i) {
+	         i.printStackTrace();
+	      }
 	}
 	public static void main(String[] args) throws DBAppException, IOException, ClassNotFoundException {
 		Class c = Class.forName("java.lang.Integer");
