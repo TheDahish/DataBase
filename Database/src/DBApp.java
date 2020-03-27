@@ -4,13 +4,16 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.Properties;
 import java.util.Set;
 import java.util.Vector;
 import java.util.stream.Collectors;
@@ -21,10 +24,13 @@ public class DBApp {
 	
 	private Vector<Table> tableVector =  new Vector<>(); //contains all table objects
 	public static int currentpages = 0;
+	public static int nodeSize;
+	public static int maxPageSize;
 	
 	//At the start of the program run this method to read all the tables from the disk and assign the vector to table vector
+	// and read the config file
 	public void init() {
-		
+			readConfig();
 	      try {
 	         FileInputStream fileIn = new FileInputStream("./data/tables.class");
 	         ObjectInputStream in = new ObjectInputStream(fileIn);
@@ -220,6 +226,44 @@ public class DBApp {
 		}
 		return object;
 	
+	}
+	public static void readConfig()
+	{
+		try (InputStream input = new FileInputStream("./data/DBApp.properties")) {
+
+            Properties prop = new Properties();
+
+            // load a properties file
+            prop.load(input);
+
+            // get the property value and print it out
+           maxPageSize =Integer.parseInt(prop.getProperty("MaximumRowsCountinPage"));
+           nodeSize = Integer.parseInt(prop.getProperty("NodeSize"));
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+
+	}
+	
+	//write into config file
+	public static void writeConfig() {
+		try (OutputStream output = new FileOutputStream("./config/DBApp.properties")) {
+
+            Properties prop = new Properties();
+
+            // set the properties value
+            prop.setProperty("MaximumRowsCountinPage", "200");
+            prop.setProperty("NodeSize", "15");
+           // prop.setProperty("db.password", "password");
+
+            // save properties to project root folder
+            prop.store(output, null);
+
+          //  System.out.println(prop);
+
+        } catch (IOException io) {
+            io.printStackTrace();
+        }
 	}
 	public static void main(String[] args) throws DBAppException, IOException, ClassNotFoundException {
 		Class c = Class.forName("java.lang.Integer");
