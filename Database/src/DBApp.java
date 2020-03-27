@@ -4,6 +4,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -12,6 +14,7 @@ import java.util.Vector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+//@SuppressWarnings({ "unchecked", "unchecked" })
 public class DBApp {
 	
 	private Vector<Table> tableVector =  new Vector<>();
@@ -66,7 +69,7 @@ public class DBApp {
 			csvWriter.append(",");
 			csvWriter.append(dataType);
 			csvWriter.append(",");
-			System.out.println("!");
+			//System.out.println("!");
 			if(attribute.equals(strClusteringKeyColumn))
 				csvWriter.append("True");
 			else
@@ -76,6 +79,12 @@ public class DBApp {
 			csvWriter.append("\n");
 			
 		}
+		csvWriter.append(strTableName);
+		csvWriter.append(",");
+		csvWriter.append("TouchDate");
+		csvWriter.append(",");
+		csvWriter.append("java.util.Date");
+		csvWriter.append("\n");
 		csvWriter.flush();
 		csvWriter.close();
 		
@@ -85,6 +94,27 @@ public class DBApp {
 	public void insertIntoTable(String strTableName,
 			 Hashtable<String,Object> htblColNameValue)
 			 throws DBAppException{
+		Table tempTable = null;
+		for(Table table : tableVector)
+		{
+			if(table.name.equals(strTableName))
+				tempTable=table;
+		}
+		if(tempTable==null)
+			System.out.println("Table not found");
+		else {
+			if(tempTable.maxPageNumber==0)
+			{
+				//first insertion in table
+				Vector<Tuple> page = new Vector<>();
+				Set<String> keys = htblColNameValue.keySet();
+				for(String key:keys) {
+					
+				}
+				
+				
+			}
+		}
 		
 	}
 	public void updateTable(String strTableName,
@@ -98,20 +128,45 @@ public class DBApp {
 			 throws DBAppException {
 		
 	}
+	//@SuppressWarnings({ "rawtypes", "rawtypes", "rawtypes" })
 	public Iterator selectFromTable(SQLTerm[] arrSQLTerms,
 		String[] strarrOperators)
 		throws DBAppException {
 			Iterator i = null;
 			return i;
 	}
+	
+	public static Object stringToObject(String type, String value)
+	{
+		Class<?> c = null;
+		Object object = null;
+		try {
+			c = Class.forName(type);
+		} catch (ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		Constructor<?> cons = null;
+		try {
+			cons = c.getConstructor(String.class);
+		} catch (NoSuchMethodException | SecurityException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		try {
+			 object = cons.newInstance(value);
+		} catch (InstantiationException | IllegalAccessException | IllegalArgumentException
+				| InvocationTargetException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return object;
+	
+	}
 	public static void main(String[] args) throws DBAppException, IOException {
-		String strTableName = "Student";
-		DBApp dbApp = new DBApp( );
-		Hashtable htblColNameType = new Hashtable( );
-		htblColNameType.put("id", "java.lang.Integer");
-		htblColNameType.put("name", "java.lang.String");
-		htblColNameType.put("gpa", "java.lang.double");
-		dbApp.createTable( strTableName, "id", htblColNameType );
+		String strColType = "java.lang.Integer";
+		String strColValue = "100";
+		System.out.println(stringToObject(strColType, strColValue).getClass());
 	}
 	
 	
