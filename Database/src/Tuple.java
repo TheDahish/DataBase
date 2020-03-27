@@ -2,9 +2,11 @@ import java.util.Hashtable;
 
 public class Tuple {
 
-	private Hashtable<String, String> data;
-	public Tuple(Hashtable<String, String> data) {
-		this.data=data;
+	private String attribute;
+	private String value;
+	public Tuple(String attribute, String value) {
+		this.attribute=attribute;
+		this.value=value;
 		// TODO Auto-generated constructor stub
 	}
 }
