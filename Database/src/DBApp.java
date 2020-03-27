@@ -17,8 +17,10 @@ import java.util.stream.Stream;
 //@SuppressWarnings({ "unchecked", "unchecked" })
 public class DBApp {
 	
-	private Vector<Table> tableVector =  new Vector<>();
+	private Vector<Table> tableVector =  new Vector<>(); //contains all table objects
 	
+	
+	//At the start of the program run this method to read all the tables from the disk and assign the vector to table vector
 	public void init() {
 		
 	      try {
@@ -40,6 +42,10 @@ public class DBApp {
 		
 	}
 	
+	
+	
+	//when creating a table add it to the vector and rewrite the vector on the disk
+	//then write the table details on the metadata
 	public void createTable(String strTableName,
 			String strClusteringKeyColumn,
 			Hashtable<String, String> htblColNameType)throws DBAppException, IOException{
@@ -91,6 +97,9 @@ public class DBApp {
 		
 	}
 	
+	
+	
+	//uncompleted
 	public void insertIntoTable(String strTableName,
 			 Hashtable<String,Object> htblColNameValue)
 			 throws DBAppException{
@@ -136,6 +145,10 @@ public class DBApp {
 			return i;
 	}
 	
+	
+	
+	//this method receives type of an object and the value as strings and returns this object
+	// eg. received "java.lang.Integer" and "100" return int 100
 	public static Object stringToObject(String type, String value)
 	{
 		Class<?> c = null;
