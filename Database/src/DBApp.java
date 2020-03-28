@@ -193,7 +193,7 @@ public class DBApp {
 	public void updateTable(String strTableName,
 			 String strClusteringKey,
 			Hashtable<String,Object> htblColNameValue,Hashtable<String,Object> newTuple  )
-			throws DBAppException {
+			throws DBAppException, IOException {
 
 		Table tempTable = null;
 		for(Table table : tableVector)
@@ -204,6 +204,27 @@ public class DBApp {
 		if(tempTable==null)
 			throw new DBAppException("Table not found.");
 		else {
+			
+			Set<String> keys = newTuple.keySet();
+			String data;
+			Object value;
+			boolean correctTuple = true;
+			for(String key:keys) {
+				data = key;
+				String type ="class " + checkDataType(strTableName, key);
+				value=newTuple.get(key);
+				String valueType = value.getClass()+"";
+				if(!(type.equals(valueType)))
+				{
+					correctTuple=false;
+					
+				}
+				
+				
+				
+			}
+			if(correctTuple) {
+			
 			boolean updated = false;
 			outerloop:
 			for(String path: tempTable.pageFiles)
@@ -224,6 +245,10 @@ public class DBApp {
 			}
 			
 		}
+			else {
+				throw new DBAppException("Type mismatch.");
+			}
+			}
 		
 	}
 	public void deleteFromTable(String strTableName,
