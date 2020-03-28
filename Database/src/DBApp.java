@@ -192,7 +192,7 @@ public class DBApp {
 	}
 	public void updateTable(String strTableName,
 			 String strClusteringKey,
-			Hashtable<String,Object> htblColNameValue,Hashtable<String,Object> newTuple  )
+			Hashtable<String,Object> htblColNameValue)
 			throws DBAppException, IOException {
 
 		Table tempTable = null;
@@ -205,14 +205,14 @@ public class DBApp {
 			throw new DBAppException("Table not found.");
 		else {
 			
-			Set<String> keys = newTuple.keySet();
+			Set<String> keys = htblColNameValue.keySet();
 			String data;
 			Object value;
 			boolean correctTuple = true;
 			for(String key:keys) {
 				data = key;
 				String type ="class " + checkDataType(strTableName, key);
-				value=newTuple.get(key);
+				value=htblColNameValue.get(key);
 				String valueType = value.getClass()+"";
 				if(!(type.equals(valueType)))
 				{
@@ -226,20 +226,40 @@ public class DBApp {
 			if(correctTuple) {
 			
 			boolean updated = false;
-			outerloop:
-			for(String path: tempTable.pageFiles)
-			{			
-				Vector<Tuple> loadedPage = readPage(path);
-				for(Tuple tuple : loadedPage) {
-					if(htblColNameValue.equals(tuple.data)) {
-						tuple.data = newTuple;
-						storePage(tempTable, loadedPage);
-						updated= true;
-						break outerloop;
-					}	
+
+			BufferedReader br = new BufferedReader(new FileReader("./data/metadata.csv"));
+			String line = br.readLine();
+			while(line!=null)
+			{
+				String [] strdata = line.split(",");
+				String name= strdata[0];
+				String attrname = strdata[1];
+				String attrvalue = strdata[2];
+				String type = strdata[3];
+				if(name.equals(strTableName) && type.equals("True") && attrvalue.equals(strClusteringKey))
+				{
+					outerloop:
+					for(String path: tempTable.pageFiles)
+					{			
+						Vector<Tuple> loadedPage = readPage(path);
+						for(Tuple tuple : loadedPage) {							
+							if(tuple.data.containsKey(attrname) && tuple.data.get(attrname).equals(attrvalue)) 
+							{
+								tuple.data = htblColNameValue;
+								storePage(tempTable, loadedPage);
+								updated= true;
+								break outerloop;
+							}	
+						}
+						
+					}
 				}
 				
+				
+				
+				line=br.readLine();
 			}
+			br.close();
 			if (!updated) {
 				throw new DBAppException("Tuple not found.");
 			}
