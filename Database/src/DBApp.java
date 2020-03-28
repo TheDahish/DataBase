@@ -1,4 +1,5 @@
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
@@ -166,7 +167,7 @@ public class DBApp {
 						{
 							t = new Tuple(htblColNameValue);
 							loadedPage.add(t);
-							storePage(tempTable, loadedPage);
+							storePageWithPath(tempTable, loadedPage, path);
 							added=true;
 							break;
 							
@@ -236,17 +237,28 @@ public class DBApp {
 				String attrname = strdata[1];
 				String attrvalue = strdata[2];
 				String type = strdata[3];
-				if(name.equals(strTableName) && type.equals("True") && attrvalue.equals(strClusteringKey))
+				if(name.equals(strTableName) && type.equals("True"))
 				{
 					outerloop:
 					for(String path: tempTable.pageFiles)
 					{			
 						Vector<Tuple> loadedPage = readPage(path);
 						for(Tuple tuple : loadedPage) {							
-							if(tuple.data.containsKey(attrname) && tuple.data.get(attrname).equals(attrvalue)) 
+							if(tuple.data.containsKey(attrname) && tuple.data.get(attrname).equals(strClusteringKey)) 
 							{
-								tuple.data = htblColNameValue;
-								storePage(tempTable, loadedPage);
+								Set<String> keys2 = tuple.data.keySet();
+								for(String key:keys)
+								{
+									for(String key2:keys2)
+									{
+										if(key.equals(key2))
+										{
+											tuple.data.put(key2, htblColNameValue.get(key));
+											break;
+										}
+									}
+								}
+								storePageWithPath(tempTable, loadedPage, path);
 								updated= true;
 								break outerloop;
 							}	
@@ -292,6 +304,7 @@ public class DBApp {
 					if(htblColNameValue.equals(tuple.data)) {
 						loadedPage.remove(tuple);
 						storePage(tempTable, loadedPage);
+						deletepage(tempTable,path);
 						deleted= true;
 						break outerloop;
 					}	
@@ -305,6 +318,24 @@ public class DBApp {
 		}
 		
 	}
+	private void deletepage(Table tempTable, String path) {
+		File f = new File (path);
+		 if(f.delete()) 
+	        { 
+	            System.out.println("File deleted successfully"); 
+	        } 
+	        else
+	        { 
+	            System.out.println("Failed to delete the file"); 
+	        } 
+		 
+		 tempTable.pageFiles.remove(path);
+		// TODO Auto-generated method stub
+		
+	}
+
+
+
 	//@SuppressWarnings({ "rawtypes", "rawtypes", "rawtypes" })
 	public Iterator selectFromTable(SQLTerm[] arrSQLTerms,
 		String[] strarrOperators)
@@ -434,6 +465,20 @@ public class DBApp {
 		try {
 	         FileOutputStream fileOut =
 	         new FileOutputStream("./data/"+table.name+table.maxPageNumber+".class");
+	         ObjectOutputStream out = new ObjectOutputStream(fileOut);
+	         out.writeObject(page);
+	         out.close();
+	         fileOut.close();
+	        // System.out.printf("success");
+	      } catch (IOException i) {
+	         i.printStackTrace();
+	      }
+	}
+	public static void storePageWithPath(Table table, Vector<Tuple> page,String path)
+	{
+		try {
+	         FileOutputStream fileOut =
+	         new FileOutputStream(path);
 	         ObjectOutputStream out = new ObjectOutputStream(fileOut);
 	         out.writeObject(page);
 	         out.close();
