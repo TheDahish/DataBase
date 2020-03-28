@@ -192,13 +192,72 @@ public class DBApp {
 	}
 	public void updateTable(String strTableName,
 			 String strClusteringKey,
-			Hashtable<String,Object> htblColNameValue )
+			Hashtable<String,Object> htblColNameValue,Hashtable<String,Object> newTuple  )
 			throws DBAppException {
+
+		Table tempTable = null;
+		for(Table table : tableVector)
+		{
+			if(table.name.equals(strTableName))
+				tempTable=table;
+		}
+		if(tempTable==null)
+			throw new DBAppException("Table not found.");
+		else {
+			boolean updated = false;
+			outerloop:
+			for(String path: tempTable.pageFiles)
+			{			
+				Vector<Tuple> loadedPage = readPage(path);
+				for(Tuple tuple : loadedPage) {
+					if(htblColNameValue.equals(tuple.data)) {
+						tuple.data = newTuple;
+						storePage(tempTable, loadedPage);
+						updated= true;
+						break outerloop;
+					}	
+				}
+				
+			}
+			if (!updated) {
+				throw new DBAppException("Tuple not found.");
+			}
+			
+		}
 		
 	}
 	public void deleteFromTable(String strTableName,
 			 Hashtable<String,Object> htblColNameValue)
 			 throws DBAppException {
+		Table tempTable = null;
+		for(Table table : tableVector)
+		{
+			if(table.name.equals(strTableName))
+				tempTable=table;
+		}
+		if(tempTable==null)
+			throw new DBAppException("Table not found.");
+		else {
+			boolean deleted = false;
+			outerloop:
+			for(String path: tempTable.pageFiles)
+			{			
+				Vector<Tuple> loadedPage = readPage(path);
+				for(Tuple tuple : loadedPage) {
+					if(htblColNameValue.equals(tuple.data)) {
+						loadedPage.remove(tuple);
+						storePage(tempTable, loadedPage);
+						deleted= true;
+						break outerloop;
+					}	
+				}
+				
+			}
+			if (!deleted) {
+				throw new DBAppException("Tuple not found.");
+			}
+			
+		}
 		
 	}
 	//@SuppressWarnings({ "rawtypes", "rawtypes", "rawtypes" })
