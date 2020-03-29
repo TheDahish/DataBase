@@ -86,7 +86,10 @@ public class DBApp {
 			csvWriter.append(",");
 			//System.out.println("!");
 			if(attribute.equals(strClusteringKeyColumn))
-				csvWriter.append("True");
+				{
+					csvWriter.append("True");
+					newTable.clusterkey=strClusteringKeyColumn;
+				}
 			else
 				csvWriter.append("False");
 			csvWriter.append(",");
@@ -137,6 +140,7 @@ public class DBApp {
 				if(!(type.equals(valueType)))
 				{
 					correctTuple=false;
+					System.out.println("wrong type, expected: "+type+" Received "+valueType);
 					
 				}
 				
@@ -158,29 +162,23 @@ public class DBApp {
 				
 			}
 			else {
+					Object clusterKey = htblColNameValue.get(tempTable.clusterkey);
+					String clusterType = clusterKey.getClass()+"";
 				
 					boolean added=false;
-					for(String path: tempTable.pageFiles)
+					switch(clusterType)
 					{
-						Vector<Tuple> loadedPage = readPage(path);
-						if(loadedPage.size()!=maxPageSize)
-						{
-							t = new Tuple(htblColNameValue);
-							loadedPage.add(t);
-							storePageWithPath(tempTable, loadedPage, path);
-							added=true;
-							break;
-							
-						}
+					case "java.lang.Integer":
+						insertIntegerOrDouble(tempTable.pageFiles,htblColNameValue,tempTable.clusterkey, tempTable);
+						break;
+					case "java.lang.Double":
+						insertIntegerOrDouble(tempTable.pageFiles,htblColNameValue,tempTable.clusterkey, tempTable);
+						break;
+					case "java.lang.String":
+						insertString(tempTable.pageFiles,htblColNameValue,tempTable.clusterkey, tempTable);
+						break;
 					}
-					if(!added)
-					{
-						tempTable.maxPageNumber++;
-						t = new Tuple(htblColNameValue);
-						page.add(t);
-						storePage(tempTable, page);
-						tempTable.pageFiles.add("./data/"+tempTable.name+tempTable.maxPageNumber+".class");
-					} 
+						
 				}
 				
 				
@@ -191,6 +189,103 @@ public class DBApp {
 		}
 		
 	}
+	private void insertString(Vector<String> pageFiles, Hashtable<String, Object> htblColNameValue, String clusterkey,
+			Table tempTable) {
+		// TODO Auto-generated method stub
+		Tuple newTuple = new Tuple(htblColNameValue);
+		for(int j =0; j<pageFiles.size();j++)
+		{
+			Vector<Tuple> page = readPage(pageFiles.get(j));
+			if(((String)page.get(page.size()-1).data.get(clusterkey)).compareTo((String)htblColNameValue.get(clusterkey))>0)
+			{
+				int i;
+				for(i = page.size()-1 ;(i>=0 && ((String)page.get(page.size()-1).data.get(clusterkey)).compareTo((String)htblColNameValue.get(clusterkey))>0);i--)
+				{
+					page.add(i+1, page.get(i));
+				}
+				page.add(i+1, newTuple);
+				storePageWithPath(page, pageFiles.get(j));
+			//	return true;
+				
+			}
+			else
+				if(((String)page.get(page.size()-1).data.get(clusterkey)).compareTo((String)htblColNameValue.get(clusterkey))<0&&j==pageFiles.size()-1)
+				{
+					page.add(newTuple);
+					storePageWithPath(page, pageFiles.get(j));
+				}
+			sortPages(pageFiles,tempTable);
+			
+		}
+		
+		
+	}
+
+
+
+	private void insertIntegerOrDouble(Vector<String> pageFiles, Hashtable<String, Object> htblColNameValue,
+			String clusterKey, Table table) {
+		Tuple newTuple = new Tuple(htblColNameValue);
+		for(int j =0; j<pageFiles.size();j++)
+		{
+			Vector<Tuple> page = readPage(pageFiles.get(j));
+			if(((double)page.get(page.size()-1).data.get(clusterKey))> ((double)htblColNameValue.get(clusterKey)))
+			{
+				int i;
+				for(i = page.size()-1 ;(i>=0 && ((double)page.get(i).data.get(clusterKey)>(double)htblColNameValue.get(clusterKey)));i--)
+				{
+					page.add(i+1, page.get(i));
+				}
+				page.add(i+1, newTuple);
+				storePageWithPath(page, pageFiles.get(j));
+			//	return true;
+				
+			}
+			else
+				if(((double)page.get(page.size()-1).data.get(clusterKey))< ((double)htblColNameValue.get(clusterKey))&&j==pageFiles.size()-1)
+				{
+					page.add(newTuple);
+					storePageWithPath(page, pageFiles.get(j));
+				}
+			sortPages(pageFiles,table);
+			
+		}
+		
+	}
+
+
+
+	private void sortPages(Vector<String> pageFiles,Table table) {
+		// TODO Auto-generated method stub
+		for(int i = 0 ; i<pageFiles.size()-1;i++)
+		{
+			Vector<Tuple> page = readPage(pageFiles.get(i));
+			Vector<Tuple> page2 = readPage(pageFiles.get(i+1));
+			
+			if(page.size()>maxPageSize)
+			{
+				page2.add(0, page.get(page.size()-1));
+				page.remove(page.size()-1);
+				storePageWithPath(page, pageFiles.get(i));
+				storePageWithPath(page2, pageFiles.get(i+1));
+				
+			}
+			
+		}
+		Vector<Tuple> page = readPage(pageFiles.get(pageFiles.size()-1));
+		if(page.size()>maxPageSize)
+		{
+			Vector<Tuple> newPage = new Vector<>();
+			newPage.add(page.get(page.size()-1));
+			page.remove(page.size()-1);
+			storePageWithPath(page, pageFiles.get(pageFiles.size()-1));
+			storePage(table, newPage);
+		}
+		
+	}
+
+
+
 	public void updateTable(String strTableName,
 			 String strClusteringKey,
 			Hashtable<String,Object> htblColNameValue)
@@ -258,7 +353,7 @@ public class DBApp {
 										}
 									}
 								}
-								storePageWithPath(tempTable, loadedPage, path);
+								storePageWithPath(loadedPage, path);
 								updated= true;
 								break outerloop;
 							}	
@@ -474,7 +569,7 @@ public class DBApp {
 	         i.printStackTrace();
 	      }
 	}
-	public static void storePageWithPath(Table table, Vector<Tuple> page,String path)
+	public static void storePageWithPath(Vector<Tuple> page,String path)
 	{
 		try {
 	         FileOutputStream fileOut =
@@ -488,9 +583,41 @@ public class DBApp {
 	         i.printStackTrace();
 	      }
 	}
+	 public static int stringCompare(String str1, String str2) 
+	    { 
+	  
+	        int l1 = str1.length(); 
+	        int l2 = str2.length(); 
+	        int lmin = Math.min(l1, l2); 
+	  
+	        for (int i = 0; i < lmin; i++) { 
+	            int str1_ch = (int)str1.charAt(i); 
+	            int str2_ch = (int)str2.charAt(i); 
+	  
+	            if (str1_ch != str2_ch) { 
+	                return str1_ch - str2_ch; 
+	            } 
+	        } 
+	  
+	        // Edge case for strings like 
+	        // String 1="Geeks" and String 2="Geeksforgeeks" 
+	        if (l1 != l2) { 
+	            return l1 - l2; 
+	        } 
+	  
+	        // If none of the above conditions is true, 
+	        // it implies both the strings are equal 
+	        else { 
+	            return 0; 
+	        } 
+	    } 
 	public static void main(String[] args) throws DBAppException, IOException, ClassNotFoundException {
-		Class c = Class.forName("java.lang.Integer");
-		System.out.println(c.getClass()+"");
+		Object o = new Integer(5);
+		Object o2 = new String("ede");
+		Object o3 =  new Double(4);
+	
+		
+		System.out.println("sdsd".compareTo("zssw"));
 	}
 	
 	
