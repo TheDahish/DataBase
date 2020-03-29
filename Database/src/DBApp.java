@@ -12,6 +12,7 @@ import java.io.OutputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Properties;
@@ -390,24 +391,43 @@ public class DBApp {
 		if(tempTable==null)
 			throw new DBAppException("Table not found.");
 		else {
+			ArrayList<String> keysToDelete= new ArrayList<String>();
+			ArrayList<Object> valuesToDelete= new ArrayList<Object>();
+			Enumeration<String> keys = htblColNameValue.keys();
+	        while(keys.hasMoreElements()){
+	            String key = keys.nextElement();
+	            keysToDelete.add(key);
+	            valuesToDelete.add(htblColNameValue.get(key));
+	        }
 			boolean deleted = false;
-			outerloop:
 			for(String path: tempTable.pageFiles)
 			{			
 				Vector<Tuple> loadedPage = readPage(path);
 				for(Tuple tuple : loadedPage) {
-					if(htblColNameValue.equals(tuple.data)) {
+					boolean todelete = true;
+					for(int i=0; i<keysToDelete.size();i++) {
+						if(!(tuple.data.containsKey(keysToDelete.get(i)) && tuple.data.get(keysToDelete.get(i)).equals(valuesToDelete.get(i)))) 
+						{
+							todelete= false;
+						}
+					}
+					
+					if(todelete) 
+					{
 						loadedPage.remove(tuple);
-						storePage(tempTable, loadedPage);
-						deletepage(tempTable,path);
+						if(loadedPage.size()==0) {
+						deletepage(tempTable,path);}
+						
+						else {
+						storePage(tempTable, loadedPage);}
+
 						deleted= true;
-						break outerloop;
 					}	
 				}
 				
 			}
 			if (!deleted) {
-				throw new DBAppException("Tuple not found.");
+				throw new DBAppException("No tuple was found.");
 			}
 			
 		}
