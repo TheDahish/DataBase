@@ -177,7 +177,7 @@ public class DBApp {
 						break;
 					case "java.lang.String":
 						insertString(tempTable.pageFiles,htblColNameValue,tempTable.clusterkey, tempTable);
-						break;
+						break; 
 					}
 						
 				}
